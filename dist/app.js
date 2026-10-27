@@ -35,6 +35,13 @@ const CATALOG_CACHE_KEY = `itm.catalog.cache:${ITM_PROJECT_ID}`;
 const CATALOG_CACHE_MAX_AGE_MS = 90 * 1000;
 const OPINIONS_INTENT_KEY = `itm.opinions.intent:${ITM_PROJECT_ID}`;
 
+function applyConfiguredWhatsappNumber(value) {
+  const configuredPhone = String(value || "").replace(/\D/g, "");
+  if (configuredPhone.length >= 7) {
+    activeWhatsappNumber = configuredPhone;
+  }
+}
+
 function applyStorePaymentSettings(settings = {}) {
   storeMode =
     settings.store_mode === "managed_orders"
@@ -170,6 +177,7 @@ async function refreshStoreSettingsFromServer() {
       throw new Error(body?.code || `STORE_SETTINGS_HTTP_${response.status}`);
     }
 
+    applyConfiguredWhatsappNumber(body.settings?.whatsapp_number);
     applyStorePaymentSettings(body.settings || {});
 
     if (document.body.dataset.page === "carrito") {
@@ -2471,6 +2479,7 @@ async function loadCatalogProducts({ reset = true, productId = null } = {}) {
   try {
     if (!catalogState.configLoaded) {
       await loadStaticStoreConfig();
+      await refreshStoreSettingsFromServer();
       catalogState.configLoaded = true;
     }
 
